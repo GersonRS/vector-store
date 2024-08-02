@@ -1,76 +1,67 @@
 services:
-  # qdrant:
-  #   image: qdrant/qdrant:latest
-  #   restart: always
-  #   ports:
-  #     - 6333:6333
-  #     - 6334:6334
-  #   expose:
-  #     - 6333
-  #     - 6334
-  #     - 6335
-  #   configs:
-  #     - source: qdrant_config
-  #       target: /qdrant/config/production.yaml
-  #   volumes:
-  #     - ./qdrant_data:/qdrant/storage
-  # weaviate:
-  #   command:
-  #     - --host
-  #     - 0.0.0.0
-  #     - --port
-  #     - '8081'
-  #     - --scheme
-  #     - http
-  #   image: cr.weaviate.io/semitechnologies/weaviate:1.26.0
-  #   ports:
-  #     - 8081:8081
-  #     - 50051:50051
-  #   volumes:
-  #     - ./weaviate_data:/var/lib/weaviate
-  #   restart: on-failure:0
-  #   environment:
-  #     QUERY_DEFAULTS_LIMIT: 25
-  #     AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
-  #     PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
-  #     DEFAULT_VECTORIZER_MODULE: 'none'
-  #     ENABLE_MODULES: 'text2vec-cohere,text2vec-huggingface,text2vec-palm,text2vec-openai,generative-openai,generative-cohere,generative-palm,ref2vec-centroid,reranker-cohere,qna-openai'
-  #     CLUSTER_HOSTNAME: 'node1'
-  # chroma:
-  #   image: ghcr.io/chroma-core/chroma:latest
-  #   environment:
-  #     - IS_PERSISTENT=TRUE
-  #     - ALLOW_RESET=TRUE
-  #   volumes:
-  #     # Default configuration for persist_directory in chromadb/config.py
-  #     # Currently it's located in "/chroma/chroma/"
-  #     - ./chroma_data:/chroma/chroma/
-  #   ports:
-  #     - 8000:8000
-  # mongodb:
-  #   image: mongodb/mongodb-atlas-local
-  #   environment:
-  #     - MONGODB_INITDB_ROOT_USERNAME=user
-  #     - MONGODB_INITDB_ROOT_PASSWORD=pass
-  #   ports:
-  #     - 27017:27017
-  #   volumes:
-  #     - ./mongo_data:/data/db
-  # postgres:
-  #   build:
-  #     context: .
-  #     dockerfile: postgres/Dockerfile
-  #   image: postgres-ai:v1
-  #   ports:
-  #     - "5432:5432"
-  #   volumes:
-  #     - ./postgres/activate-extension.sql:/docker-entrypoint-initdb.d/0-activate_extension.sql
-  #     - ./postgres_data:/var/lib/postgresql/data
+  qdrant:
+    image: qdrant/qdrant:latest
+    restart: always
+    ports:
+      - 6333:6333
+      - 6334:6334
+    expose:
+      - 6333
+      - 6334
+      - 6335
+    configs:
+      - source: qdrant_config
+        target: /qdrant/config/production.yaml
+    volumes:
+      - ./qdrant_data:/qdrant/storage
+  weaviate:
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - '8081'
+      - --scheme
+      - http
+    image: cr.weaviate.io/semitechnologies/weaviate:1.26.0
+    ports:
+      - 8081:8081
+      - 50051:50051
+    volumes:
+      - ./weaviate_data:/var/lib/weaviate
+    restart: on-failure:0
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      DEFAULT_VECTORIZER_MODULE: 'none'
+      ENABLE_MODULES: 'text2vec-cohere,text2vec-huggingface,text2vec-palm,text2vec-openai,generative-openai,generative-cohere,generative-palm,ref2vec-centroid,reranker-cohere,qna-openai'
+      CLUSTER_HOSTNAME: 'node1'
+  chroma:
+    image: ghcr.io/chroma-core/chroma:latest
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ALLOW_RESET=TRUE
+    volumes:
+      # Default configuration for persist_directory in chromadb/config.py
+      # Currently it's located in "/chroma/chroma/"
+      - ./chroma_data:/chroma/chroma/
+    ports:
+      - 8000:8000
+  postgres:
+    build:
+      context: .
+      dockerfile: postgres/Dockerfile
+    image: postgres-ai:v1
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres/activate-extension.sql:/docker-entrypoint-initdb.d/0-activate_extension.sql
+      - ./postgres_data:/var/lib/postgresql/data
 
-  #   environment:
-  #     - POSTGRES_USER=postgres
-  #     - POSTGRES_PASSWORD=postgres
-  #     - POSTGRES_DB=vectordb
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=vectordb
   minio:
     hostname: minio
     image: 'minio/minio:latest'
@@ -91,7 +82,22 @@ services:
     container_name: mc
     entrypoint: >
       /bin/sh -c " until (/usr/bin/mc config host add minio http://minio:9000 minioadmin minioadmin) do echo '...waiting...' && sleep 1; done; /usr/bin/mc rm -r --force minio/lance; /usr/bin/mc mb minio/lance; /usr/bin/mc policy set public minio/lance; exit 0; "
-
+  redis:
+    image: redis/redis-stack:latest
+    restart: always
+    ports:
+      - 8001:8001
+      - 6379:6379
+  marqo:
+    hostname: marqo
+    image: marqoai/marqo:1.4.1
+    container_name: marqo
+    restart: always
+    privileged: true
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - 8882:8882
 configs:
   qdrant_config:
     content: |
